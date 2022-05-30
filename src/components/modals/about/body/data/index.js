@@ -14,7 +14,7 @@ const Data = () => {
       <Item
         icon={ID.USERS}
         key={ID.USERS}
-        value={storage.metadata.participants}
+        value={storage.metadata.participants.length}
       />
       {CONTENT.map((item) => (
         <Item

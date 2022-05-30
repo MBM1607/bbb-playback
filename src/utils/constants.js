@@ -37,6 +37,7 @@ const ID = {
   METADATA: 'metadata',
   NOTES: 'notes',
   PANZOOMS: 'panzooms',
+  PARTICIPANTS: 'participants',
   PLAYER: 'player',
   POLLS: 'polls',
   PRESENTATION: 'presentation',

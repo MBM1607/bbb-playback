@@ -39,6 +39,24 @@ const getId = data => {
   return parseInt(id.shift(), 10);
 };
 
+const getParticipants = recording => {
+  if (!recording.participant) {
+    return [...Array(parseInt(recording.participants[0]))].map(x => ({
+      name: '',
+      role: '',
+      joined_at: new Date()
+    }));
+  }
+
+  return recording.participant.map(participant => {
+    return {
+      name: participant.name[0],
+      joined_at: new Date(parseInt(participant.timestampUTC[0])),
+      role: participant.role[0],
+    }
+  })
+}
+
 const getNumbers = data => {
   if (!data) return [];
 
@@ -109,28 +127,27 @@ const buildVideos = result => {
 };
 
 const buildMetadata = result => {
-  let data = {};
   const { recording } = result;
+  console.log(recording);
+  console.log(getParticipants(recording));
 
-  if (hasProperty(recording, 'meeting')) {
-    const attr = getAttr(recording.meeting.shift());
-    const { id } = attr;
-    const meta = recording.meta.shift();
-    const end = parseInt(recording.end_time.shift(), 10);
-    const name = meta.name ? meta.name.shift() : attr.name;
-    const participants = parseInt(recording.participants.shift(), 10);
-    const start = parseInt(recording.start_time.shift(), 10);
+  if (!hasProperty(recording, 'meeting')) return {};
 
-    data = {
-      end,
-      id,
-      name,
-      participants,
-      start,
-    };
-  }
+  const attr = getAttr(recording.meeting.shift());
+  const { id } = attr;
+  const meta = recording.meta.shift();
+  const end = parseInt(recording.end_time.shift(), 10);
+  const name = meta.name ? meta.name.shift() : attr.name;
+  const participants = getParticipants(recording);
+  const start = parseInt(recording.start_time.shift(), 10);
 
-  return data;
+  return {
+    end,
+    id,
+    name,
+    participants,
+    start,
+  };
 };
 
 const buildNotes = result => {
@@ -590,4 +607,5 @@ export {
   getId,
   getNumbers,
   mergeMessages,
+  getInitials
 };

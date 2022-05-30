@@ -8,6 +8,7 @@ import './index.scss';
 const APPLICATIONS = [
   ID.CHAT,
   ID.NOTES,
+  ID.PARTICIPANTS
 ];
 
 const Control = ({
@@ -18,15 +19,19 @@ const Control = ({
 
   return (
     <div className="application-control">
-      {APPLICATIONS.map(application => {
+      {APPLICATIONS.map((application, i) => {
         const active = current === application;
 
         return (
           <div
             className={cx('application-icon', { inactive: !active })}
             onClick={() => active ? null : toggleApplication(application)}
+            key={`application-icon-${application}`}
+            id={`application-icon-${application}`}
           >
-            <Icon name={application} />
+            <Icon
+              name={application === ID.PARTICIPANTS ? 'users' : application}
+            />
           </div>
         );
       })}

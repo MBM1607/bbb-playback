@@ -128,8 +128,6 @@ const buildVideos = result => {
 
 const buildMetadata = result => {
   const { recording } = result;
-  console.log(recording);
-  console.log(getParticipants(recording));
 
   if (!hasProperty(recording, 'meeting')) return {};
 

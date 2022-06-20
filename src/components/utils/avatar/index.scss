@@ -19,6 +19,8 @@ $avatar-size: 2rem;
   --avatar-thirteen-background-color: rgb(13, 71, 161);
   --avatar-fourteen-background-color: rgb(2, 119, 189);
   --avatar-fifteen-background-color: rgb(1, 87, 155);
+  --user-indicator-voice-bg: rgb(0, 128, 129);
+  --user-list-bg: rgb(243, 246, 249);
 }
 
 .avatar-wrapper {
@@ -31,6 +33,18 @@ $avatar-size: 2rem;
     height: $avatar-size;
     text-align: center;
     width: $avatar-size;
+    border-radius: 5px;
+    position: relative;
+
+    .talking {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      border-radius: inherit;
+      animation: pulse 1s infinite ease-in;
+    }
 
     .initials {
       align-items: center;
@@ -40,6 +54,22 @@ $avatar-size: 2rem;
       justify-content: center;
       text-transform: capitalize;
       width: 100%;
+      position: relative;
+      z-index: 1;
+
+      &.show-mic::after {
+        font-family: 'icons';
+        content: "\e931";
+        background-color: var(--user-indicator-voice-bg);
+        top: 1.375rem;
+        left: 1.375rem;
+        opacity: 1;
+        width: 1.2rem;
+        height: 1.2rem;
+        position: absolute;
+        border-radius: 50%;
+        border: 1.5px solid var(--user-list-bg);
+      }
     }
   }
 
@@ -49,69 +79,149 @@ $avatar-size: 2rem;
 
   .avatar-default {
     background-color: var(--avatar-default-background-color);
+
+    .talking {
+      background-color: var(--avatar-default-background-color);
+    }
   }
 
   .avatar-zero {
     background-color: var(--avatar-zero-background-color);
+
+    .talking {
+      background-color: var(--avatar-zero-background-color);
+    }
   }
 
   .avatar-one {
     background-color: var(--avatar-one-background-color);
+
+    .talking {
+      background-color: var(--avatar-one-background-color);
+    }
   }
 
   .avatar-two {
     background-color: var(--avatar-two-background-color);
+
+    .talking {
+      background-color: var(--avatar-two-background-color);
+    }
   }
 
   .avatar-three {
     background-color: var(--avatar-three-background-color);
+
+    .talking {
+      background-color: var(--avatar-three-background-color);
+    }
   }
 
   .avatar-four {
     background-color: var(--avatar-four-background-color);
+
+    .talking {
+      background-color: var(--avatar-four-background-color);
+    }
   }
 
   .avatar-five {
     background-color: var(--avatar-five-background-color);
+
+    .talking {
+      background-color: var(--avatar-five-background-color);
+    }
   }
 
   .avatar-six {
     background-color: var(--avatar-six-background-color);
+
+    .talking {
+      background-color: var(--avatar-six-background-color);
+    }
   }
 
   .avatar-seven {
     background-color: var(--avatar-seven-background-color);
+
+    .talking {
+      background-color: var(--avatar-seven-background-color);
+    }
   }
 
   .avatar-eight {
     background-color: var(--avatar-eight-background-color);
+
+    .talking {
+      background-color: var(--avatar-eight-background-color);
+    }
   }
 
   .avatar-nine {
     background-color: var(--avatar-nine-background-color);
+
+    .talking {
+      background-color: var(--avatar-nine-background-color);
+    }
   }
 
   .avatar-ten {
     background-color: var(--avatar-ten-background-color);
+
+    .talking {
+      background-color: var(--avatar-ten-background-color);
+    }
   }
 
   .avatar-eleven {
     background-color: var(--avatar-eleven-background-color);
+
+    .talking {
+      background-color: var(--avatar-eleven-background-color);
+    }
   }
 
   .avatar-twelve {
     background-color: var(--avatar-twelve-background-color);
+
+    .talking {
+      background-color: var(--avatar-twelve-background-color);
+    }
   }
 
   .avatar-thirteen {
     background-color: var(--avatar-thirteen-background-color);
+
+    .talking {
+      background-color: var(--avatar-thirteen-background-color);
+    }
   }
 
   .avatar-fourteen {
     background-color: var(--avatar-fourteen-background-color);
+
+    .talking {
+      background-color: var(--avatar-fourteen-background-color);
+    }
   }
 
   .avatar-fifteen {
     background-color: var(--avatar-fifteen-background-color);
+
+    .talking {
+      background-color: var(--avatar-fifteen-background-color);
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
   }
 }

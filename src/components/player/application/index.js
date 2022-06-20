@@ -4,7 +4,7 @@ import Control from './control';
 import { ID } from 'utils/constants';
 import './index.scss';
 
-const DEFAULT = ID.CHAT;
+const DEFAULT = ID.PARTICIPANTS;
 
 const Application = () => {
   const [current, setCurrent] = useState(DEFAULT);

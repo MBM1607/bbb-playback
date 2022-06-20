@@ -44,15 +44,22 @@ const getParticipants = recording => {
     return [...Array(parseInt(recording.participants[0]))].map(x => ({
       name: '',
       role: '',
-      joined_at: new Date()
+      joinedAt: new Date(),
+      userId: '',
+      talkingEvents: []
     }));
   }
 
   return recording.participant.map(participant => {
     return {
       name: participant.name[0],
-      joined_at: new Date(parseInt(participant.timestampUTC[0])),
       role: participant.role[0],
+      joinedAt: new Date(parseInt(participant.timestampUTC[0])),
+      userId: participant.userId[0],
+      talkingEvents: recording.talkingEvent.filter(event => event.userId[0] === participant.userId[0]).map(event => ({
+        timestamp: parseInt(event.timestampUTC[0]),
+        talking: event.talking[0] === 'true'
+      }))
     }
   })
 }

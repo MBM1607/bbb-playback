@@ -35,7 +35,7 @@ const Participants = () => {
         {
           storage.metadata.participants.map((participant, i) => (
             <Participant
-              key={`participant-${participant.name}-${i}`}
+              key={`participant-${participant.userId}`}
               {...participant}
             />
           ))

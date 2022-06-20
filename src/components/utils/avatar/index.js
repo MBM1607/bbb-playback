@@ -10,6 +10,7 @@ const propTypes = {
   icon: PropTypes.string,
   initials: PropTypes.string,
   name: PropTypes.string,
+  pulse: PropTypes.bool
 };
 
 const defaultProps = {
@@ -17,6 +18,7 @@ const defaultProps = {
   icon: '',
   initials: '',
   name: '',
+  pulse: false
 };
 
 const Avatar = ({
@@ -24,6 +26,7 @@ const Avatar = ({
   icon,
   initials,
   name,
+  pulse
 }) => {
   // TODO: this should become a property
   const style = initials.length > 0 ? getAvatarStyle(name) : 'avatar-default';
@@ -31,10 +34,15 @@ const Avatar = ({
   return (
     <div className="avatar-wrapper">
       <div className={cx('avatar', { circle }, style)}>
+        {
+          pulse && (
+            <span className='talking'></span>
+          )
+        }
         {icon ? (
           <Icon name={icon} />
         ) : (
-          <span className="initials">
+          <span className={['initials', pulse ? 'show-mic' : ''].join(' ')}>
             {initials}
           </span>
         )}

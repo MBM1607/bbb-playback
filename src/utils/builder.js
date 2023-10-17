@@ -1,87 +1,80 @@
-import { parseStringPromise } from 'xml2js';
-import { files as config } from 'config';
-import { getFileType } from './data';
-import {
-  hasProperty,
-  isEmpty,
-} from './data/validators';
-import {
-  ID,
-  ROLES,
-  SHAPES,
-} from './constants';
-import logger from './logger';
+import { files as config } from "config";
+import { ID, ROLES, SHAPES } from "./constants";
+import { caseInsensitiveReducer, getFileType } from "./data";
+import { hasProperty, isEmpty } from "./data/validators";
+import { parseFromString } from "./data/xml2json";
+import logger from "./logger";
 
-const getAttr = data => {
+const convertToArray = (object) => {
+  if (Array.isArray(object)) {
+    return object;
+  } else {
+    let objectArray = [];
+    objectArray.push(object);
+    return objectArray;
+  }
+};
+
+const getAttr = (data) => {
   if (!data) return {};
 
-  const attr = data['$'];
+  const attr = data["$"];
   if (!attr) return {};
 
   return attr;
 };
 
-const getChildren = data => {
-  if (!data) return [];
-
-  const children = data['$$'];
-  if (!children) return [];
-
-  return children;
-};
-
-const getId = data => {
+const getId = (data) => {
   if (!data) return -1;
 
   const id = data.match(/\d+$/);
   if (!id || id.length === 0) return -1;
 
-  return parseInt(id.shift(), 10);
+  return parseInt(id, 10);
 };
 
-const getParticipants = recording => {
+const getParticipants = (recording) => {
   if (!recording.participant) {
-    return [...Array(parseInt(recording.participants[0]))].map(x => ({
-      name: '',
-      role: '',
+    return [...Array(parseInt(recording.participants[0]))].map((x) => ({
+      name: "",
+      role: "",
       joinedAt: new Date(),
-      userId: '',
-      talkingEvents: []
+      userId: "",
+      talkingEvents: [],
     }));
   }
 
-  return recording.participant.map(participant => {
+  return recording.participant.map((participant) => {
     return {
       name: participant.name[0],
       role: participant.role[0],
       joinedAt: new Date(parseInt(participant.timestampUTC[0])),
-      userId: (
-        participant.userId ?
-          participant.userId[0]
-          :
-          `${participant.name[0]}-${participant.timestampUTC[0]}`
-      ),
-      talkingEvents: recording?.talkingEvent?.filter(event => event.userId[0] === participant.userId[0]).map(event => ({
-        timestamp: parseInt(event.timestampUTC[0]),
-        talking: event.talking[0] === 'true'
-      }))
-    }
-  })
-}
+      userId: participant.userId
+        ? participant.userId[0]
+        : `${participant.name[0]}-${participant.timestampUTC[0]}`,
+      talkingEvents: recording?.talkingEvent
+        ?.filter((event) => event.userId[0] === participant.userId[0])
+        .map((event) => ({
+          timestamp: parseInt(event.timestampUTC[0]),
+          talking: event.talking[0] === "true",
+        })),
+    };
+  });
+};
 
-const getNumbers = data => {
+const getNumbers = (data) => {
   if (!data) return [];
 
-  const trimmed = data.trim().replace(/  +/g, ' ');
+  const trimmed = data.trim().replace(/  +/g, " ");
   if (trimmed.length === 0) return [];
 
-  const split = trimmed.split(' ');
-  const numbers = split.map(v => parseFloat(v));
+  const split = trimmed.split(" ");
+  const numbers = split.map((v) => parseFloat(v));
 
   return numbers;
 };
 
-const buildAlternates = result => {
+const buildAlternates = (result) => {
   if (!result) return [];
 
   let data = [];
@@ -106,7 +99,7 @@ const buildAlternates = result => {
 };
 
 // TODO
-const buildCaptions = result => {
+const buildCaptions = (result) => {
   if (!result) return [];
 
   let data = [];
@@ -116,19 +109,24 @@ const buildCaptions = result => {
 };
 
 // TODO
-const buildPolls = result => {
+const buildPolls = (result) => {
   if (!result) return [];
 
-  let data = [];
-  data = result;
+  const data = result.map((r) => {
+    const answers = r.answers.reduce(caseInsensitiveReducer, []);
+    return {
+      ...r,
+      answers,
+    };
+  });
 
   return data;
 };
 
-const buildVideos = result => {
+const buildVideos = (result) => {
   if (!result) return [];
 
-  const data = result.map(r => {
+  const data = result.map((r) => {
     return {
       timestamp: r.timestamp,
       url: r.external_video_url,
@@ -138,18 +136,17 @@ const buildVideos = result => {
   return data;
 };
 
-const buildMetadata = result => {
+const buildMetadata = (result) => {
   const { recording } = result;
 
-  if (!hasProperty(recording, 'meeting')) return {};
+  if (!hasProperty(recording, "meeting")) return {};
 
-  const attr = getAttr(recording.meeting.shift());
-  const { id } = attr;
-  const meta = recording.meta.shift();
-  const end = parseInt(recording.end_time.shift(), 10);
-  const name = meta.name ? meta.name.shift() : attr.name;
-  const participants = getParticipants(recording);
-  const start = parseInt(recording.start_time.shift(), 10);
+  const id = recording.meeting._id;
+  const meta = recording.meta;
+  const end = parseInt(recording.end_time, 10);
+  const name = meta.meetingName ? meta.meetingName : recording.meeting._name;
+  const participants = parseInt(recording.participants, 10);
+  const start = parseInt(recording.start_time, 10);
 
   return {
     end,
@@ -160,14 +157,14 @@ const buildMetadata = result => {
   };
 };
 
-const buildNotes = result => {
-  if (!result) return '';
+const buildNotes = (result) => {
+  if (!result) return "";
 
   // Extract the notes' body
   const regex = /<body>\n.*\n<\/body>/g;
   const match = result.match(regex);
 
-  let data = '';
+  let data = "";
   if (!isEmpty(match)) {
     data = match.shift();
   }
@@ -175,19 +172,19 @@ const buildNotes = result => {
   return data;
 };
 
-const buildStyle = data => {
-  const items = data.split(';');
+const buildStyle = (data) => {
+  const items = data.split(";");
   let style = {};
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const trimmed = item.trim();
 
     if (trimmed.length === 0) return;
 
-    const split = trimmed.split(':').map(i => i.trim());
+    const split = trimmed.split(":").map((i) => i.trim());
 
     // Remove visibility
-    if (split[0] === 'visibility') return;
+    if (split[0] === "visibility") return;
 
     style[split[0]] = split[1];
   });
@@ -195,28 +192,27 @@ const buildStyle = data => {
   return style;
 };
 
-const buildSlides = image => {
+const buildSlides = (image) => {
   let slides = [];
 
   if (image) {
-    image.forEach(img => {
-      const attr = getAttr(img);
-      const src = attr['xlink:href'];
+    convertToArray(image).forEach((img) => {
+      const src = img["_xlink:href"];
 
       // Skip the logo
       if (!src) return;
 
       // Get the number from the id name
-      const slideId = getId(attr.id);
-      const timestamps = getNumbers(attr.in);
+      const slideId = getId(img._id);
+      const timestamps = getNumbers(img._in);
 
-      timestamps.forEach(timestamp => {
+      timestamps.forEach((timestamp) => {
         slides.push({
           id: slideId,
-          height: parseInt(attr.height),
+          height: parseInt(img._height),
           src,
           timestamp,
-          width: parseInt(attr.width),
+          width: parseInt(img._width),
         });
       });
     });
@@ -227,16 +223,12 @@ const buildSlides = image => {
   return slides;
 };
 
-const buildThumbnails = slides => {
-  const prefix = 'slide-';
-  const url = 'thumbnails/thumb-';
+const buildThumbnails = (slides) => {
+  const prefix = "slide-";
+  const url = "thumbnails/thumb-";
 
   return slides.reduce((result, slide) => {
-    const {
-      id,
-      src,
-      timestamp,
-    } = slide;
+    const { id, src, timestamp } = slide;
 
     if (src.includes(ID.DESKSHARE)) {
       result.push({
@@ -256,23 +248,11 @@ const buildThumbnails = slides => {
   }, []);
 };
 
-const parseText = data => {
-  let text = '';
-
-  const children = getChildren(data);
-  if (!isEmpty(children)) {
-    const child = children.shift();
-    const grandchildren = getChildren(child);
-    if (!isEmpty(grandchildren)) {
-      text = grandchildren.map(grandchild => {
-        const name = grandchild['#name'];
-        if (name === 'br') return '\r';
-
-        return grandchild['_'];
-      }).join('');
-    }
-  }
-
+const parseText = (data) => {
+  let text = data.p["#text"];
+  if (text)
+    text = text.replaceAll('<br xmlns="http://www.w3.org/1999/xhtml" />', "\r");
+  else text = "";
   return text;
 };
 
@@ -280,49 +260,46 @@ const buildCanvases = (group, slides) => {
   let canvases = [];
 
   if (group) {
-    canvases = group.map(canvas => {
-      const canvasAttr = getAttr(canvas);
-      const canvasId = getId(canvasAttr.id);
-
-      let data = canvas.g.map(g => {
-        const drawAttr = getAttr(g);
-        const timestamp = parseFloat(drawAttr.timestamp);
-        const clear = parseFloat(drawAttr.undo);
-        const style = buildStyle(drawAttr.style);
-        const drawId = getId(drawAttr.shape);
+    canvases = convertToArray(group).map((canvas) => {
+      const canvasId = getId(canvas._id);
+      let data = convertToArray(canvas.g).map((g) => {
+        const timestamp = parseFloat(g._timestamp);
+        const clear = parseFloat(g._undo);
+        const style = buildStyle(g._style);
+        const drawId = getId(g._shape);
 
         let shape = {};
         if (g.image) {
           shape.type = SHAPES.POLL;
-          const image = getAttr(g.image.shift());
+          const image = g.image;
           // TODO: Better adapt for old versions
           // Versions prior to 2.3 included a rect structure along with an image
           if (g.rect) {
-            const rect = getAttr(g.rect.shift());
+            const rect = g.rect;
             shape.data = Object.assign({ rect }, { image });
           } else {
             shape.data = Object.assign({ image });
           }
         } else if (g.polyline) {
           shape.type = SHAPES.POLYLINE;
-          shape.data = Object.assign({}, getAttr(g.polyline.shift()));
+          shape.data = Object.assign({}, g.polyline);
         } else if (g.line) {
           shape.type = SHAPES.LINE;
-          shape.data = Object.assign({}, getAttr(g.line.shift()));
+          shape.data = Object.assign({}, g.line);
         } else if (g.polygon) {
           shape.type = SHAPES.POLYGON;
-          shape.data = Object.assign({}, getAttr(g.polygon.shift()));
+          shape.data = Object.assign({}, g.polygon);
         } else if (g.circle) {
           shape.type = SHAPES.CIRCLE;
-          shape.data = Object.assign({}, getAttr(g.circle.shift()));
+          shape.data = Object.assign({}, g.circle);
         } else if (g.path) {
           shape.type = SHAPES.PATH;
-          shape.data = Object.assign({}, getAttr(g.path.shift()));
+          shape.data = Object.assign({}, g.path);
         } else if (g.switch) {
           shape.type = SHAPES.TEXT;
-          const foreignObject = g.switch.shift()['foreignObject'].shift();
+          const foreignObject = g.switch.foreignObject;
           const text = parseText(foreignObject);
-          shape.data = Object.assign({ text }, getAttr(foreignObject));
+          shape.data = Object.assign({ text }, foreignObject);
         }
 
         return {
@@ -342,7 +319,7 @@ const buildCanvases = (group, slides) => {
   }
 
   slides.forEach((slide, index) => {
-    const found = canvases.find(canvas => canvas.id === slide.id);
+    const found = canvases.find((canvas) => canvas.id === slide.id);
     if (found) {
       canvases[index].timestamp = slide.timestamp;
     } else {
@@ -359,15 +336,12 @@ const buildCanvases = (group, slides) => {
   return canvases;
 };
 
-const buildShapes = result => {
+const buildShapes = (result) => {
   let data = {};
   const { svg } = result;
 
   if (svg) {
-    const {
-      image,
-      g,
-    } = svg;
+    const { image, g } = svg;
 
     data.slides = buildSlides(image);
     data.thumbnails = buildThumbnails(data.slides);
@@ -377,99 +351,126 @@ const buildShapes = result => {
   return data;
 };
 
-const buildPanzooms = result => {
+const buildTldraw = (result) => {
+  if (!result) return [];
+
+  let bbb_version = null;
+  if (result["bbb_version"]) {
+    bbb_version = result["bbb_version"];
+    delete result["bbb_version"];
+  }
+
+  let tldraw = [];
+  tldraw = Object.keys(result).map((i) => {
+    let data = result[i].shapes.map((shape) => {
+      return {
+        clear: shape.undo,
+        id: shape.id,
+        shape: shape.shape_data,
+        timestamp: shape.timestamp,
+      };
+    });
+
+    return {
+      data,
+      timestamp: result[i].timestamp,
+      id: i,
+      bbb_version: bbb_version,
+    };
+  });
+
+  return tldraw;
+};
+
+const buildPanzooms = (result) => {
   let data = [];
   const { recording } = result;
 
-  if (hasProperty(recording, 'event')) {
-    data = recording.event.map(panzoom => {
-      const attr = getAttr(panzoom);
-      const viewbox = getNumbers(panzoom.viewBox.shift());
-
+  if (hasProperty(recording, "event")) {
+    const tldraw = recording._tldraw === "true";
+    data = convertToArray(recording.event).map((panzoom) => {
+      const viewbox = getNumbers(panzoom.viewBox);
       return {
-        timestamp: parseFloat(attr.timestamp),
+        timestamp: parseFloat(panzoom._timestamp),
         x: viewbox.shift(),
         y: viewbox.shift(),
         width: viewbox.shift(),
         height: viewbox.shift(),
       };
     });
+    data.tldraw = tldraw;
   }
 
   return data;
 };
 
-const buildCursor = result => {
+const buildCursor = (result) => {
   let data = [];
   const { recording } = result;
 
-  if (hasProperty(recording, 'event')) {
-    data = recording.event.map(cursor => {
-      const attr = getAttr(cursor);
-      const position = getNumbers(cursor.cursor.shift());
+  if (hasProperty(recording, "event")) {
+    data = convertToArray(recording.event).map((cursor) => {
+      const position = getNumbers(cursor.cursor);
 
       return {
-        timestamp: parseFloat(attr.timestamp),
+        timestamp: parseFloat(cursor._timestamp),
         x: position.shift(),
         y: position.shift(),
       };
     });
+    data.tldraw = recording._tldraw === "true";
   }
 
   return data;
 };
 
-const clearHyperlink = message => {
+const clearHyperlink = (message) => {
   const regex = /<a href="(.*)" rel="nofollow"><u>\1<\/u><\/a>/g;
 
-  return message.replace(regex, '$1');
+  return message.replace(regex, "$1");
 };
 
-const decodeXML = message => {
+const decodeXML = (message) => {
   return message
     .replace(/&(quot|#34);/g, '"')
-    .replace(/&(amp|#38);/g, '&')
+    .replace(/&(amp|#38);/g, "&")
     .replace(/&(apos|#39);/g, "'")
-    .replace(/&(lt|#60);/g, '<')
-    .replace(/&(gt|#62);/g, '>');
+    .replace(/&(lt|#60);/g, "<")
+    .replace(/&(gt|#62);/g, ">");
 };
 
-const getInitials = name => {
+const getInitials = (name) => {
   let initials;
 
   if (name) {
-    initials = name
-      .slice(0, 2)
-      .toLowerCase()
-      .trim();
+    initials = name.slice(0, 2).toLowerCase().trim();
   }
 
   return initials;
 };
 
-const buildChat = result => {
+const buildChat = (result) => {
   const { popcorn } = result;
   let data = [];
 
-  if (hasProperty(popcorn, 'chattimeline')) {
+  if (hasProperty(popcorn, "chattimeline")) {
     const { chattimeline } = popcorn;
-    data = chattimeline.map(chat => {
-      const attr = getAttr(chat);
-      const clear = attr.out ? parseFloat(attr.out) : -1;
-      const message = decodeXML(clearHyperlink(attr.message));
-      const initials = getInitials(attr.name);
-      const emphasized = attr.chatEmphasizedText === 'true';
-      const moderator = attr.senderRole === ROLES.MODERATOR;
+    data = convertToArray(chattimeline).map((chat) => {
+      const clear = chat._out ? parseFloat(chat._out) : -1;
+      const message = decodeXML(clearHyperlink(chat._message));
+      const initials = getInitials(chat._name);
+      const emphasized = chat._chatEmphasizedText === "true";
+      const moderator = chat._senderRole === ROLES.MODERATOR;
 
       return {
         clear,
         emphasized,
-        hyperlink: message !== attr.message,
+        hyperlink: message !== chat._message,
         initials,
-        name: attr.name,
+        name: chat._name,
         message,
         moderator,
-        timestamp: parseFloat(attr.in),
+        timestamp: parseFloat(chat._in),
       };
     });
   }
@@ -477,39 +478,20 @@ const buildChat = result => {
   return data;
 };
 
-const buildScreenshare = result => {
+const buildScreenshare = (result) => {
   let data = [];
   const { recording } = result;
 
-  if (hasProperty(recording, 'event')) {
-    data = recording.event.map(screenshare => {
-      const attr = getAttr(screenshare);
-
+  if (hasProperty(recording, "event")) {
+    data = convertToArray(recording.event).map((screenshare) => {
       return {
-        timestamp: parseFloat(attr.start_timestamp),
-        clear: parseFloat(attr.stop_timestamp),
+        timestamp: parseFloat(screenshare._start_timestamp),
+        clear: parseFloat(screenshare._stop_timestamp),
       };
     });
   }
 
   return data;
-};
-
-const getOptions = filename => {
-  let options = {};
-
-  switch (filename) {
-    case config.shapes:
-      options = {
-        explicitChildren: true,
-        preserveChildrenOrder: true,
-        charsAsChildren: true,
-      };
-      break;
-    default:
-  }
-
-  return options;
 };
 
 const build = (filename, value) => {
@@ -517,7 +499,7 @@ const build = (filename, value) => {
     let data;
     const fileType = getFileType(filename);
 
-    if (fileType === 'json') {
+    if (fileType === "json") {
       switch (filename) {
         case config.alternates:
           data = buildAlternates(value);
@@ -531,31 +513,37 @@ const build = (filename, value) => {
         case config.videos:
           data = buildVideos(value);
           break;
+        case config.tldraw:
+          data = buildTldraw(value);
+          break;
         default:
-          logger.debug('unhandled', 'json', filename);
+          logger.debug("unhandled", "json", filename);
           reject(filename);
       }
       resolve(data);
-    } else if (fileType === 'html') {
+    } else if (fileType === "html") {
       switch (filename) {
         case config.notes:
           data = buildNotes(value);
           break;
         default:
-          logger.debug('unhandled', 'html', filename);
+          logger.debug("unhandled", "html", filename);
           reject(filename);
       }
       resolve(data);
     } else {
       if (!value) {
-        logger.warn('missing', filename);
+        logger.warn("missing", filename);
 
         return resolve(null);
       }
 
       // Parse XML data
-      const options = getOptions(filename);
-      parseStringPromise(value, options).then(result => {
+      const result = parseFromString(value);
+
+      if (!result) {
+        reject(filename);
+      } else {
         switch (filename) {
           case config.chat:
             data = buildChat(result);
@@ -576,24 +564,26 @@ const build = (filename, value) => {
             data = buildShapes(result);
             break;
           default:
-            logger.debug('unhandled', 'xml', filename);
+            logger.debug("unhandled", "xml", filename);
             reject(filename);
         }
         resolve(data);
-      }).catch(error => reject(error));
+      }
     }
   });
 };
 
 const addAlternatesToThumbnails = (thumbnails, alternates) => {
-  const prefix = 'thumbnails/thumb-';
-  const url = 'slide-';
+  const prefix = "thumbnails/thumb-";
+  const url = "slide-";
 
-  return thumbnails.map(thumbnail => {
+  return thumbnails.map((thumbnail) => {
     const { src } = thumbnail;
-    thumbnail.alt = '';
+    thumbnail.alt = "";
 
-    const found = alternates.find(alt => src.replace(prefix, url) === alt.src);
+    const found = alternates.find(
+      (alt) => src.replace(prefix, url) === alt.src
+    );
     if (found) thumbnail.alt = found.text;
 
     return thumbnail;
@@ -601,11 +591,9 @@ const addAlternatesToThumbnails = (thumbnails, alternates) => {
 };
 
 const mergeMessages = (chat, polls, videos) => {
-  return [
-    ...chat,
-    ...polls,
-    ...videos,
-  ].sort((a, b) => a.timestamp - b.timestamp);
+  return [...chat, ...polls, ...videos].sort(
+    (a, b) => a.timestamp - b.timestamp
+  );
 };
 
 export {
@@ -615,7 +603,7 @@ export {
   decodeXML,
   getAttr,
   getId,
+  getInitials,
   getNumbers,
   mergeMessages,
-  getInitials
 };

@@ -1,26 +1,20 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
+import Loader from "components/loader";
+import Router from "components/router";
+import { getLocale, getMessages } from "locales";
+import { createRoot } from "react-dom/client";
 import { IntlProvider } from "react-intl";
-import Loader from 'components/loader';
-import Router from 'components/router';
-import {
-  getLocale,
-  getMessages,
-} from 'locales';
-import { ROUTER } from 'utils/constants';
-import { getStyle } from 'utils/params';
-import './index.scss';
+import { ROUTER } from "utils/constants";
+import { getStyle } from "utils/params";
+import "./index.scss";
 
 const locale = getLocale();
 const style = getStyle();
 
-const root = createRoot(document.getElementById('root'));
+const root = createRoot(document.getElementById("root"));
+
 root.render(
-  <IntlProvider
-      locale={locale}
-      messages={getMessages(locale)}
-    >
-      {style ? <link rel="stylesheet" type="text/css" href={style} /> : null}
-      {ROUTER ? <Router /> : <Loader />}
-    </IntlProvider>
+  <IntlProvider locale={locale} messages={getMessages(locale)}>
+    {style ? <link rel="stylesheet" type="text/css" href={style} /> : null}
+    {ROUTER ? <Router /> : <Loader />}
+  </IntlProvider>
 );

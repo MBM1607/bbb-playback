@@ -1,9 +1,15 @@
 # bbb-playback
 
+This is the recording playback component of TutorBees.net Whiteboard.
+Upstream is located at <https://github.com/bigbluebutton/bbb-playback.git>, whose `master` branch
+will be used to keep the `main` up to date.
+
+## Setup
+
 Clone this repository, install the dependencies and deploy
 
 ```bash
-git clone https://github.com/bigbluebutton/bbb-playback.git
+git clone https://github.com/techhive-solutions/bbb-playback
 cd bbb-playback
 npm install
 ./deploy.sh
@@ -18,26 +24,32 @@ https://<domain>/playback/presentation/2.3/<recordId>
 ## URL query strings
 
 - frequency:
+
   - `f=<value>`: renders per second (e.g., 5)
 
 - layout:
+
   - `l=content`: focus on content
   - `l=disabled`: disabled interactive elements
   - `l=media`: focus on media
   - `l=swapped`: content/media swapped
 
 - style: custom style
+
   - `s=<name>`
 
 - time:
+
   - `t=HhMmSs` (e.g., 1h10m5s)
   - `t=MmSs`
   - `t=Ss`
 
 - path:
+
   - `p=path/to/recordings`
 
 - locale:
+
   - `locale=locale-CODE` (e.g., pt-BR)
 
 - log:
@@ -46,10 +58,12 @@ https://<domain>/playback/presentation/2.3/<recordId>
 ## Configuration
 
 - chat:
+
   - `scroll`: automatic scroll [`true`|`false`]
   - `align`: scroll align [`top`|`middle`|`bottom`]
 
 - controls:
+
   - `about`
   - `fullscreen`
   - `search`
@@ -58,13 +72,16 @@ https://<domain>/playback/presentation/2.3/<recordId>
   - `thumbnails`
 
 - locale:
+
   - `default`: fallback [`en`]
 
 - player: primary media configuration
+
   - `rps`: renders per second
   - `rates`: speed rates
 
 - shortcuts: alt + shift
+
   - `fullscreen`: `K`
   - `play/pause`: `Enter`
   - `section`: `L`
@@ -78,6 +95,7 @@ https://<domain>/playback/presentation/2.3/<recordId>
   - `swap`: `M`
 
 - styles: custom styles
+
   - `default`: default style
   - `url`: styles host
   - `valid`: valid style names

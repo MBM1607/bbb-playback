@@ -1,9 +1,9 @@
 {
   "short_name": "Playback",
-  "name": "BigBlueButton recording playback",
+  "name": "TutorBees recording playback",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "logo.png",
       "sizes": "16x16",
       "type": "image/x-icon"
     }

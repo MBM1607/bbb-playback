@@ -11,6 +11,7 @@ const propTypes = {
   icon: PropTypes.string,
   initials: PropTypes.string,
   name: PropTypes.string,
+  pulse: PropTypes.bool,
   onClick: PropTypes.func,
 };
 
@@ -20,7 +21,8 @@ const defaultProps = {
   icon: '',
   initials: '',
   name: '',
-  onClick: () => {},
+  pulse: false,
+  onClick: () => { },
 };
 
 const Margin = ({
@@ -29,6 +31,7 @@ const Margin = ({
   icon,
   initials,
   name,
+  pulse,
   onClick,
 }) => {
   const style = {
@@ -49,6 +52,7 @@ const Margin = ({
         icon={icon}
         initials={initials}
         name={name}
+        pulse={pulse}
       />
     </div>
   );

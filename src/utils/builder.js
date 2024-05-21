@@ -44,7 +44,11 @@ const getParticipants = (recording) => {
     }));
   }
 
-  return recording.participant.map((participant) => {
+  const participants = Array.isArray(recording.participant)
+    ? recording.participant
+    : [recording.participant];
+
+  return participants.map((participant) => {
     return {
       name: participant.name,
       role: participant.role,

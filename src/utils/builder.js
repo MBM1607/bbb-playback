@@ -46,17 +46,17 @@ const getParticipants = (recording) => {
 
   return recording.participant.map((participant) => {
     return {
-      name: participant.name[0],
-      role: participant.role[0],
-      joinedAt: new Date(parseInt(participant.timestampUTC[0])),
+      name: participant.name,
+      role: participant.role,
+      joinedAt: new Date(parseInt(participant.timestampUTC)),
       userId: participant.userId
-        ? participant.userId[0]
-        : `${participant.name[0]}-${participant.timestampUTC[0]}`,
+        ? participant.userId
+        : `${participant.name}-${participant.timestampUTC}`,
       talkingEvents: recording?.talkingEvent
-        ?.filter((event) => event.userId[0] === participant.userId[0])
+        ?.filter((event) => event.userId === participant.userId)
         .map((event) => ({
-          timestamp: parseInt(event.timestampUTC[0]),
-          talking: event.talking[0] === "true",
+          timestamp: parseInt(event.timestampUTC),
+          talking: event.talking === "true",
         })),
     };
   });

@@ -48,6 +48,12 @@ const getParticipants = (recording) => {
     ? recording.participant
     : [recording.participant];
 
+  const talkingEvents = Array.isArray(recording.talkingEvent)
+    ? recording.talkingEvent
+    : recording.talkingEvent
+    ? [recording.talkingEvent]
+    : [];
+
   return participants.map((participant) => {
     return {
       name: participant.name,
@@ -56,8 +62,8 @@ const getParticipants = (recording) => {
       userId: participant.userId
         ? participant.userId
         : `${participant.name}-${participant.timestampUTC}`,
-      talkingEvents: recording?.talkingEvent
-        ?.filter((event) => event.userId === participant.userId)
+      talkingEvents: talkingEvents
+        .filter((event) => event.userId === participant.userId)
         .map((event) => ({
           timestamp: parseInt(event.timestampUTC),
           talking: event.talking === "true",

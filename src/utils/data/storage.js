@@ -1,31 +1,14 @@
-import {
-  files,
-  medias,
-} from 'config';
-import {
-  addAlternatesToThumbnails,
-  build,
-  mergeMessages,
-} from 'utils/builder';
-import {
-  ERROR,
-  ID,
-} from 'utils/constants';
-import {
-  buildFileURL,
-  getFileType,
-} from 'utils/data';
-import {
-  hasPresentation,
-  hasProperty,
-  isEmpty,
-} from 'utils/data/validators';
-import logger from 'utils/logger';
+import { files, medias } from "config";
+import { addAlternatesToThumbnails, build, mergeMessages } from "utils/builder";
+import { ERROR, ID } from "utils/constants";
+import { buildFileURL, getFileType } from "utils/data";
+import { hasPresentation, hasProperty, isEmpty } from "utils/data/validators";
+import logger from "utils/logger";
 
 const STATE = {
-  WAITING: 'waiting',
-  LOADING: 'loading',
-  LOADED: 'loaded',
+  WAITING: "waiting",
+  LOADING: "loading",
+  LOADED: "loaded",
 };
 
 let STATUS = STATE.WAITING;
@@ -41,7 +24,7 @@ const hasFetched = () => {
   STATUS = STATE.LOADING;
 
   return false;
-}
+};
 
 const hasLoaded = () => {
   const stored = Object.keys(DATA).length;
@@ -60,50 +43,59 @@ const hasLoaded = () => {
 const fetchFile = (data, recordId, onUpdate, onLoaded, onError) => {
   const file = files[data];
   const url = buildFileURL(file, recordId);
-  fetch(url).then(response => {
-    if (response.ok) {
-      logger.debug(ID.STORAGE, file, response);
-      const fileType = getFileType(file);
-      switch (fileType) {
-        case 'json':
-          return response.json();
-        case 'html':
-          return response.text();
-        case 'svg':
-          return response.text();
-        case 'xml':
-          return response.text();
-        default:
-          onError(ERROR.BAD_REQUEST);
-          return null;
+  fetch(url)
+    .then((response) => {
+      if (response.ok) {
+        logger.debug(ID.STORAGE, file, response);
+        const fileType = getFileType(file);
+        switch (fileType) {
+          case "json":
+            return response.json();
+          case "html":
+            return response.text();
+          case "svg":
+            return response.text();
+          case "xml":
+            return response.text();
+          default:
+            onError(ERROR.BAD_REQUEST);
+            return null;
+        }
+      } else {
+        logger.warn(ID.STORAGE, file, response);
+        return null;
       }
-    } else {
-      logger.warn(ID.STORAGE, file, response);
-      return null;
-    }
-  }).then(value => {
-    build(file, value).then(content => {
-      if (content) logger.debug(ID.STORAGE, 'builded', file);
-      DATA[data] = content;
-      onUpdate(data);
-      if (hasLoaded()) onLoaded();
-    }).catch(error => onError(ERROR.BAD_REQUEST));
-  }).catch(error => onError(ERROR.NOT_FOUND));
+    })
+    .then((value) => {
+      console.info("Building file: ", file);
+      build(file, value)
+        .then((content) => {
+          if (content) logger.debug(ID.STORAGE, "builded", file);
+          DATA[data] = content;
+          onUpdate(data);
+          if (hasLoaded()) onLoaded();
+        })
+        .catch((error) => {
+          console.error("Error building file: ", file);
+          onError(ERROR.BAD_REQUEST);
+        });
+    })
+    .catch((error) => onError(ERROR.NOT_FOUND));
 };
 
 const fetchMedia = (recordId, onUpdate, onLoaded, onError) => {
-  const fetches = medias.map(type => {
+  const fetches = medias.map((type) => {
     const url = buildFileURL(`video/webcams.${type}`, recordId);
-    return fetch(url, { method: 'HEAD' });
+    return fetch(url, { method: "HEAD" });
   });
 
-  Promise.all(fetches).then(responses => {
+  Promise.all(fetches).then((responses) => {
     const media = [];
-    responses.forEach(response => {
+    responses.forEach((response) => {
       const { ok, url } = response;
       if (ok) {
         logger.debug(ID.STORAGE, ID.MEDIA, response);
-        media.push(medias.find(type => url.endsWith(type)));
+        media.push(medias.find((type) => url.endsWith(type)));
       }
     });
 
@@ -122,13 +114,13 @@ const fetchMedia = (recordId, onUpdate, onLoaded, onError) => {
 //
 // TODO: Add support for mp3 format
 const tryMediaFallback = (recordId, onUpdate, onLoaded, onError) => {
-  const url = buildFileURL('audio/audio.webm', recordId);
-  fetch(url, { method: 'HEAD' }).then(response => {
+  const url = buildFileURL("audio/audio.webm", recordId);
+  fetch(url, { method: "HEAD" }).then((response) => {
     const { ok } = response;
     if (ok) {
       logger.debug(ID.STORAGE, ID.MEDIA, response);
       FALLBACK = true;
-      DATA[ID.MEDIA] = ['webm'];
+      DATA[ID.MEDIA] = ["webm"];
       onUpdate(ID.MEDIA);
       if (hasLoaded()) onLoaded();
     } else {
@@ -201,11 +193,7 @@ const storage = {
   },
   get messages() {
     if (!hasProperty(DATA, ID.MESSAGES)) {
-      DATA[ID.MESSAGES] = mergeMessages(
-        this.chat,
-        this.polls,
-        this.videos,
-      );
+      DATA[ID.MESSAGES] = mergeMessages(this.chat, this.polls, this.videos);
     }
 
     return DATA[ID.MESSAGES];
@@ -233,7 +221,10 @@ const storage = {
   },
   get thumbnails() {
     if (!hasProperty(DATA, ID.THUMBNAILS)) {
-      DATA[ID.THUMBNAILS] = addAlternatesToThumbnails(this.shapes[ID.THUMBNAILS], this.alternates);
+      DATA[ID.THUMBNAILS] = addAlternatesToThumbnails(
+        this.shapes[ID.THUMBNAILS],
+        this.alternates
+      );
     }
 
     return DATA[ID.THUMBNAILS];
